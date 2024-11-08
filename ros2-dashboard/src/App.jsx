@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
+import * as echarts from 'echarts';
 import './App.css'
 
 function App() {
   const [connected, setConnected] = useState(false)
   const [error, setError] = useState(null)
   const wsRef = useRef(null)
+  const chartRef = useRef(null)
+  const chartInstanceRef = useRef(null)
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString())
   
   // 实时数据状态
@@ -12,7 +15,15 @@ function App() {
     wheelLeftFeedback: 0,
     wheelRightFeedback: 0
   })
-  
+
+  // 历史数据
+  const [chartData, setChartData] = useState({
+    times: [],
+    leftWheel: [],
+    rightWheel: []
+  })
+  const MAX_DATA_POINTS = 100 // 最多显示100个数据点
+
   // 控制参数
   const [wheelSpeed, setWheelSpeed] = useState({
     left: 0,
@@ -23,14 +34,244 @@ function App() {
     angular: 0
   })
 
+  // 初始化图表
+  useEffect(() => {
+    if (chartRef.current) {
+      chartInstanceRef.current = echarts.init(chartRef.current, 'dark');
+      
+      const option = {
+        backgroundColor: 'transparent',
+        title: {
+          text: '实时速度趋势',
+          textStyle: {
+            fontSize: 14,
+            color: '#fff',
+            fontWeight: 'normal'
+          }
+        },
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: {
+            type: 'cross',
+            label: {
+              backgroundColor: '#283b56'
+            }
+          }
+        },
+        legend: {
+          data: ['左轮速度', '右轮速度'],
+          textStyle: {
+            color: '#fff'
+          }
+        },
+        toolbox: {
+          show: true,
+          feature: {
+            dataView: { 
+              readOnly: true,
+              textColor: '#fff',
+              backgroundColor: '#1a1a1a',
+              borderColor: '#333'
+            },
+            saveAsImage: {
+              backgroundColor: '#1a1a1a'
+            }
+          },
+          iconStyle: {
+            borderColor: '#666'
+          }
+        },
+        dataZoom: [
+          {
+            show: true,
+            realtime: true,
+            start: 65,
+            end: 100,
+            textStyle: {
+              color: '#fff'
+            },
+            borderColor: '#333',
+            backgroundColor: '#1a1a1a',
+            fillerColor: 'rgba(255,255,255,0.1)',
+            handleStyle: {
+              borderColor: '#666'
+            }
+          },
+          {
+            type: 'inside',
+            realtime: true,
+            start: 65,
+            end: 100
+          }
+        ],
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '15%',
+          containLabel: true
+        },
+        xAxis: {
+          type: 'category',
+          boundaryGap: false,
+          data: [],
+          axisLine: {
+            lineStyle: {
+              color: '#666'
+            }
+          },
+          axisLabel: {
+            formatter: (value) => new Date(parseInt(value)).toLocaleTimeString(),
+            color: '#fff'
+          },
+          splitLine: {
+            show: false
+          }
+        },
+        yAxis: {
+          type: 'value',
+          name: '速度 (m/s)',
+          nameTextStyle: {
+            color: '#fff'
+          },
+          axisLabel: {
+            color: '#fff'
+          },
+          axisLine: {
+            lineStyle: {
+              color: '#666'
+            }
+          },
+          splitLine: {
+            lineStyle: {
+              color: 'rgba(255,255,255,0.1)',
+              type: 'dashed'
+            }
+          }
+        },
+        series: [
+          {
+            name: '左轮速度',
+            type: 'line',
+            smooth: true,
+            symbol: 'none',
+            sampling: 'lttb',
+            animation: false,
+            lineStyle: {
+              width: 2,
+              color: '#00ff9d'
+            },
+            areaStyle: {
+              opacity: 0.2,
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: '#00ff9d' },
+                { offset: 1, color: 'rgba(0, 255, 157, 0)' }
+              ])
+            },
+            data: []
+          },
+          {
+            name: '右轮速度',
+            type: 'line',
+            smooth: true,
+            symbol: 'none',
+            sampling: 'lttb',
+            animation: false,
+            lineStyle: {
+              width: 2,
+              color: '#0091ff'
+            },
+            areaStyle: {
+              opacity: 0.2,
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: '#0091ff' },
+                { offset: 1, color: 'rgba(0, 145, 255, 0)' }
+              ])
+            },
+            data: []
+          }
+        ]
+      };
+
+      chartInstanceRef.current.setOption(option);
+
+      const handleResize = () => {
+        chartInstanceRef.current?.resize();
+      };
+
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        chartInstanceRef.current?.dispose();
+      };
+    }
+  }, []);
+
+  // 更新图表数据
+  const updateChart = (newData) => {
+    if (!chartInstanceRef.current) return;
+  
+    const { times, leftWheel, rightWheel } = newData;
+    
+    // 确保数据格式正确
+    const formattedData = times.map((time, index) => ({
+      time,
+      leftWheel: leftWheel[index] || 0,
+      rightWheel: rightWheel[index] || 0
+    }));
+  
+    chartInstanceRef.current.setOption({
+      xAxis: {
+        data: formattedData.map(item => item.time)
+      },
+      series: [
+        {
+          name: '左轮速度',
+          data: formattedData.map(item => item.leftWheel),
+          type: 'line',
+          smooth: true,
+          showSymbol: false,
+          lineStyle: {
+            width: 2,
+            color: '#00ff9d'  // 绿色
+          },
+          areaStyle: {
+            opacity: 0.2,
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: '#00ff9d' },
+              { offset: 1, color: 'rgba(0, 255, 157, 0)' }
+            ])
+          }
+        },
+        {
+          name: '右轮速度',
+          data: formattedData.map(item => item.rightWheel),
+          type: 'line',
+          smooth: true,
+          showSymbol: false,
+          lineStyle: {
+            width: 2,
+            color: '#0091ff'  // 蓝色
+          },
+          areaStyle: {
+            opacity: 0.2,
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: '#0091ff' },
+              { offset: 1, color: 'rgba(0, 145, 255, 0)' }
+            ])
+          }
+        }
+      ]
+    });
+  };
+  
+
   // 时间更新效果
   useEffect(() => {
-    // 每秒更新时间
     const timer = setInterval(() => {
       setCurrentTime(new Date().toLocaleTimeString())
-    }, 1000)
+    }, 100)
 
-    // 清理函数
     return () => clearInterval(timer)
   }, [])
 
@@ -61,16 +302,46 @@ function App() {
         const message = JSON.parse(event.data)
         console.log('Received message:', message)
         
+        // 更新当前传感器数据
         setSensorData(prev => {
-          switch(message.topic) {
-            case '/wheel_left/feedback':
-              return { ...prev, wheelLeftFeedback: message.data }
-            case '/wheel_right/feedback':
-              return { ...prev, wheelRightFeedback: message.data }
-            default:
-              return prev
+          const newData = { ...prev }
+          if (message.topic === '/wheel_left/feedback') {
+            newData.wheelLeftFeedback = message.data
+          } else if (message.topic === '/wheel_right/feedback') {
+            newData.wheelRightFeedback = message.data
           }
+          return newData
         })
+
+        // 更新图表数据
+        setChartData(prev => {
+          const timestamp = new Date().getTime()
+          const newTimes = [...prev.times, timestamp]
+          const newLeftWheel = [...prev.leftWheel]
+          const newRightWheel = [...prev.rightWheel]
+
+          if (message.topic === '/wheel_left/feedback') {
+            newLeftWheel.push(message.data)
+            newRightWheel.push(newRightWheel.length > 0 ? newRightWheel[newRightWheel.length - 1] : 0)
+          } else if (message.topic === '/wheel_right/feedback') {
+            newRightWheel.push(message.data)
+            newLeftWheel.push(newLeftWheel.length > 0 ? newLeftWheel[newLeftWheel.length - 1] : 0)
+          }
+
+          // 保持数据点数量限制
+          const sliceStart = Math.max(0, newTimes.length - MAX_DATA_POINTS)
+          const newData = {
+            times: newTimes.slice(sliceStart),
+            leftWheel: newLeftWheel.slice(sliceStart),
+            rightWheel: newRightWheel.slice(sliceStart)
+          }
+
+          // 更新图表
+          updateChart(newData)
+
+          return newData
+        })
+
       } catch (err) {
         console.error('Error parsing message:', err)
       }
@@ -93,7 +364,7 @@ function App() {
   }
 
   const handleWheelSpeedChange = (wheel, value) => {
-    const speed = parseFloat(value)
+    const speed = parseFloat(value) || 0
     setWheelSpeed(prev => ({
       ...prev,
       [wheel]: speed
@@ -102,7 +373,7 @@ function App() {
   }
 
   const handleVelocityChange = (type, value) => {
-    const vel = parseFloat(value)
+    const vel = parseFloat(value) || 0
     setVelocity(prev => ({
       ...prev,
       [type]: vel
@@ -138,24 +409,21 @@ function App() {
           </div>
           <div className="sensor-grid">
             <div className="sensor-item">
-              <div className="sensor-icon">
-                <i className="icon">⚙️</i>
-              </div>
               <div className="sensor-info">
                 <span className="sensor-label">左轮反馈</span>
                 <span className="sensor-value">{sensorData.wheelLeftFeedback.toFixed(2)} m/s</span>
               </div>
             </div>
             <div className="sensor-item">
-              <div className="sensor-icon">
-                <i className="icon">⚙️</i>
-              </div>
               <div className="sensor-info">
                 <span className="sensor-label">右轮反馈</span>
                 <span className="sensor-value">{sensorData.wheelRightFeedback.toFixed(2)} m/s</span>
               </div>
             </div>
           </div>
+          
+          {/* ECharts 图表容器 */}
+          <div ref={chartRef} className="chart-container" />
         </div>
 
         {/* 控制面板卡片 */}
