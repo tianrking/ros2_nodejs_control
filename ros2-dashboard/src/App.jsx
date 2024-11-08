@@ -17,11 +17,20 @@ function App() {
   })
 
   // 历史数据
+  // const [chartData, setChartData] = useState({
+  //   times: [],
+  //   leftWheel: [],
+  //   rightWheel: []
+  // })
+
   const [chartData, setChartData] = useState({
     times: [],
-    leftWheel: [],
-    rightWheel: []
+    leftWheelFeedback: [],    // 左轮实际速度
+    rightWheelFeedback: [],   // 右轮实际速度
+    leftWheelTarget: [],      // 左轮期望速度
+    rightWheelTarget: []      // 右轮期望速度
   })
+  
   const MAX_DATA_POINTS = 100 // 最多显示100个数据点
 
   // 控制参数
@@ -66,72 +75,29 @@ function App() {
           }
         },
         legend: {
-          data: ['左轮速度', '右轮速度'],
+          data: ['左轮实际速度', '右轮实际速度', '左轮期望速度', '右轮期望速度'],
           textStyle: {
             color: '#fff'
           }
         },
-        toolbox: {
-          show: true,
-          feature: {
-            dataView: { 
-              readOnly: true,
-              textColor: '#fff',
-              backgroundColor: '#1a1a1a',
-              borderColor: '#333'
-            },
-            saveAsImage: {
-              backgroundColor: '#1a1a1a'
-            }
-          },
-          iconStyle: {
-            borderColor: '#666'
-          }
-        },
-        dataZoom: [
-          {
-            show: true,
-            realtime: true,
-            start: 65,
-            end: 100,
-            textStyle: {
-              color: '#fff'
-            },
-            borderColor: '#333',
-            backgroundColor: '#1a1a1a',
-            fillerColor: 'rgba(255,255,255,0.1)',
-            handleStyle: {
-              borderColor: '#666'
-            }
-          },
-          {
-            type: 'inside',
-            realtime: true,
-            start: 65,
-            end: 100
-          }
-        ],
         grid: {
           left: '3%',
           right: '4%',
-          bottom: '15%',
+          bottom: '3%',
           containLabel: true
         },
         xAxis: {
           type: 'category',
           boundaryGap: false,
           data: [],
-          axisLine: {
-            lineStyle: {
-              color: '#666'
-            }
-          },
           axisLabel: {
             formatter: (value) => new Date(parseInt(value)).toLocaleTimeString(),
             color: '#fff'
           },
-          splitLine: {
-            show: false
+          axisLine: {
+            lineStyle: {
+              color: '#666'
+            }
           }
         },
         yAxis: {
@@ -143,11 +109,6 @@ function App() {
           axisLabel: {
             color: '#fff'
           },
-          axisLine: {
-            lineStyle: {
-              color: '#666'
-            }
-          },
           splitLine: {
             lineStyle: {
               color: 'rgba(255,255,255,0.1)',
@@ -157,121 +118,100 @@ function App() {
         },
         series: [
           {
-            name: '左轮速度',
+            name: '左轮实际速度',
             type: 'line',
             smooth: true,
             symbol: 'none',
-            sampling: 'lttb',
-            animation: false,
             lineStyle: {
               width: 2,
-              color: '#00ff9d'
-            },
-            areaStyle: {
-              opacity: 0.2,
-              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: '#00ff9d' },
-                { offset: 1, color: 'rgba(0, 255, 157, 0)' }
-              ])
+              color: '#00ff9d'  // 绿色
             },
             data: []
           },
           {
-            name: '右轮速度',
+            name: '右轮实际速度',
             type: 'line',
             smooth: true,
             symbol: 'none',
-            sampling: 'lttb',
-            animation: false,
             lineStyle: {
               width: 2,
-              color: '#0091ff'
+              color: '#0091ff'  // 蓝色
             },
-            areaStyle: {
-              opacity: 0.2,
-              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: '#0091ff' },
-                { offset: 1, color: 'rgba(0, 145, 255, 0)' }
-              ])
+            data: []
+          },
+          {
+            name: '左轮期望速度',
+            type: 'line',
+            smooth: true,
+            symbol: 'none',
+            lineStyle: {
+              width: 2,
+              type: 'dashed',
+              color: '#00ff9d'  // 虚线绿色
+            },
+            data: []
+          },
+          {
+            name: '右轮期望速度',
+            type: 'line',
+            smooth: true,
+            symbol: 'none',
+            lineStyle: {
+              width: 2,
+              type: 'dashed',
+              color: '#0091ff'  // 虚线蓝色
             },
             data: []
           }
         ]
       };
-
+  
       chartInstanceRef.current.setOption(option);
-
-      const handleResize = () => {
+      
+      // 响应窗口变化
+      window.addEventListener('resize', () => {
         chartInstanceRef.current?.resize();
-      };
-
-      window.addEventListener('resize', handleResize);
-
+      });
+  
       return () => {
-        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('resize', () => {
+          chartInstanceRef.current?.resize();
+        });
         chartInstanceRef.current?.dispose();
       };
     }
   }, []);
 
   // 更新图表数据
+  // 更新图表数据的函数
   const updateChart = (newData) => {
     if (!chartInstanceRef.current) return;
-  
-    const { times, leftWheel, rightWheel } = newData;
-    
-    // 确保数据格式正确
-    const formattedData = times.map((time, index) => ({
-      time,
-      leftWheel: leftWheel[index] || 0,
-      rightWheel: rightWheel[index] || 0
-    }));
-  
+
     chartInstanceRef.current.setOption({
       xAxis: {
-        data: formattedData.map(item => item.time)
+        data: newData.times
       },
       series: [
         {
-          name: '左轮速度',
-          data: formattedData.map(item => item.leftWheel),
-          type: 'line',
-          smooth: true,
-          showSymbol: false,
-          lineStyle: {
-            width: 2,
-            color: '#00ff9d'  // 绿色
-          },
-          areaStyle: {
-            opacity: 0.2,
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: '#00ff9d' },
-              { offset: 1, color: 'rgba(0, 255, 157, 0)' }
-            ])
-          }
+          name: '左轮实际速度',
+          data: newData.leftWheelFeedback
         },
         {
-          name: '右轮速度',
-          data: formattedData.map(item => item.rightWheel),
-          type: 'line',
-          smooth: true,
-          showSymbol: false,
-          lineStyle: {
-            width: 2,
-            color: '#0091ff'  // 蓝色
-          },
-          areaStyle: {
-            opacity: 0.2,
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: '#0091ff' },
-              { offset: 1, color: 'rgba(0, 145, 255, 0)' }
-            ])
-          }
+          name: '右轮实际速度',
+          data: newData.rightWheelFeedback
+        },
+        {
+          name: '左轮期望速度',
+          data: newData.leftWheelTarget
+        },
+        {
+          name: '右轮期望速度',
+          data: newData.rightWheelTarget
         }
       ]
     });
   };
-  
+    
 
   // 时间更新效果
   useEffect(() => {
@@ -306,53 +246,68 @@ function App() {
 
     ws.onmessage = (event) => {
       try {
-        const message = JSON.parse(event.data)
-        console.log('Received message:', message)
+        const message = JSON.parse(event.data);
+        console.log('Received message:', message);
         
         // 更新当前传感器数据
         setSensorData(prev => {
-          const newData = { ...prev }
+          const newData = { ...prev };
           if (message.topic === '/wheel_left/feedback') {
-            newData.wheelLeftFeedback = message.data
+            newData.wheelLeftFeedback = message.data;
           } else if (message.topic === '/wheel_right/feedback') {
-            newData.wheelRightFeedback = message.data
+            newData.wheelRightFeedback = message.data;
           }
-          return newData
-        })
-
+          return newData;
+        });
+    
         // 更新图表数据
         setChartData(prev => {
-          const timestamp = new Date().getTime()
-          const newTimes = [...prev.times, timestamp]
-          const newLeftWheel = [...prev.leftWheel]
-          const newRightWheel = [...prev.rightWheel]
-
-          if (message.topic === '/wheel_left/feedback') {
-            newLeftWheel.push(message.data)
-            newRightWheel.push(newRightWheel.length > 0 ? newRightWheel[newRightWheel.length - 1] : 0)
-          } else if (message.topic === '/wheel_right/feedback') {
-            newRightWheel.push(message.data)
-            newLeftWheel.push(newLeftWheel.length > 0 ? newLeftWheel[newLeftWheel.length - 1] : 0)
+          const timestamp = new Date().getTime();
+          let newData = { ...prev };
+          
+          // 添加新的时间点
+          if (!prev.times.includes(timestamp)) {
+            newData.times = [...prev.times, timestamp];
           }
-
+    
+          // 根据消息类型更新相应的数据系列
+          switch(message.topic) {
+            case '/wheel_left/feedback':
+              newData.leftWheelFeedback = [...prev.leftWheelFeedback, message.data];
+              break;
+            case '/wheel_right/feedback':
+              newData.rightWheelFeedback = [...prev.rightWheelFeedback, message.data];
+              break;
+            case '/wheel_left/target_speed':
+              newData.leftWheelTarget = [...prev.leftWheelTarget, message.data];
+              break;
+            case '/wheel_right/target_speed':
+              newData.rightWheelTarget = [...prev.rightWheelTarget, message.data];
+              break;
+          }
+    
           // 保持数据点数量限制
-          const sliceStart = Math.max(0, newTimes.length - MAX_DATA_POINTS)
-          const newData = {
-            times: newTimes.slice(sliceStart),
-            leftWheel: newLeftWheel.slice(sliceStart),
-            rightWheel: newRightWheel.slice(sliceStart)
+          if (newData.times.length > MAX_DATA_POINTS) {
+            const sliceStart = newData.times.length - MAX_DATA_POINTS;
+            newData = {
+              times: newData.times.slice(sliceStart),
+              leftWheelFeedback: newData.leftWheelFeedback.slice(sliceStart),
+              rightWheelFeedback: newData.rightWheelFeedback.slice(sliceStart),
+              leftWheelTarget: newData.leftWheelTarget.slice(sliceStart),
+              rightWheelTarget: newData.rightWheelTarget.slice(sliceStart)
+            };
           }
-
+    
           // 更新图表
-          updateChart(newData)
-
-          return newData
-        })
-
+          updateChart(newData);
+    
+          return newData;
+        });
+    
       } catch (err) {
-        console.error('Error parsing message:', err)
+        console.error('Error parsing message:', err);
       }
-    }
+    };
 
     return () => {
       ws.close()

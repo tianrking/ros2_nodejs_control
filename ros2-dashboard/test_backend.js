@@ -46,6 +46,22 @@ async function initROS2() {
       }
     );
 
+    ros2Node.createSubscription(
+      'std_msgs/msg/Float64',
+      '/wheel_left/target_speed',
+      (msg) => {
+        broadcastMessage('/wheel_left/target_speed', msg.data);
+      }
+    );
+
+    ros2Node.createSubscription(
+      'std_msgs/msg/Float64',
+      '/wheel_right/target_speed',
+      (msg) => {
+        broadcastMessage('/wheel_right/target_speed', msg.data);
+      }
+    );
+
     ros2Node.spin();
     console.log('Node is spinning');
     return ros2Node;
