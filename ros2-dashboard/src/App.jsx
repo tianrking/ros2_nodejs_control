@@ -265,24 +265,35 @@ function App() {
           const timestamp = new Date().getTime();
           let newData = { ...prev };
           
-          // 添加新的时间点
-          if (!prev.times.includes(timestamp)) {
-            newData.times = [...prev.times, timestamp];
+          // 如果是新的时间点，添加到时间数组
+          if (newData.times[newData.times.length - 1] !== timestamp) {
+            newData.times = [...newData.times, timestamp];
+    
+            // 对所有数据系列添加新的点，使用最后一个已知值
+            newData.leftWheelFeedback = [...newData.leftWheelFeedback, 
+              newData.leftWheelFeedback[newData.leftWheelFeedback.length - 1] || 0];
+            newData.rightWheelFeedback = [...newData.rightWheelFeedback,
+              newData.rightWheelFeedback[newData.rightWheelFeedback.length - 1] || 0];
+            newData.leftWheelTarget = [...newData.leftWheelTarget,
+              newData.leftWheelTarget[newData.leftWheelTarget.length - 1] || 0];
+            newData.rightWheelTarget = [...newData.rightWheelTarget,
+              newData.rightWheelTarget[newData.rightWheelTarget.length - 1] || 0];
           }
     
-          // 根据消息类型更新相应的数据系列
+          // 更新最新的数据点
+          const lastIndex = newData.times.length - 1;
           switch(message.topic) {
             case '/wheel_left/feedback':
-              newData.leftWheelFeedback = [...prev.leftWheelFeedback, message.data];
+              newData.leftWheelFeedback[lastIndex] = message.data;
               break;
             case '/wheel_right/feedback':
-              newData.rightWheelFeedback = [...prev.rightWheelFeedback, message.data];
+              newData.rightWheelFeedback[lastIndex] = message.data;
               break;
             case '/wheel_left/target_speed':
-              newData.leftWheelTarget = [...prev.leftWheelTarget, message.data];
+              newData.leftWheelTarget[lastIndex] = message.data;
               break;
             case '/wheel_right/target_speed':
-              newData.rightWheelTarget = [...prev.rightWheelTarget, message.data];
+              newData.rightWheelTarget[lastIndex] = message.data;
               break;
           }
     
