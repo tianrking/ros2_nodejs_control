@@ -9,7 +9,11 @@ function App() {
   const chartRef = useRef(null)
   const chartInstanceRef = useRef(null)
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString())
-  
+
+  const [paramsModified, setParamsModified] = useState(false)
+  const [submitSuccess, setSubmitSuccess] = useState(false)
+
+
   // 实时数据状态
   const [sensorData, setSensorData] = useState({
     wheelLeftFeedback: 0,
@@ -30,7 +34,7 @@ function App() {
     leftWheelTarget: [],      // 左轮期望速度
     rightWheelTarget: []      // 右轮期望速度
   })
-  
+
   const MAX_DATA_POINTS = 100 // 最多显示100个数据点
 
   // 控制参数
@@ -54,7 +58,7 @@ function App() {
   useEffect(() => {
     if (chartRef.current) {
       chartInstanceRef.current = echarts.init(chartRef.current, 'dark');
-      
+
       const option = {
         backgroundColor: 'transparent',
         title: {
@@ -165,14 +169,14 @@ function App() {
           }
         ]
       };
-  
+
       chartInstanceRef.current.setOption(option);
-      
+
       // 响应窗口变化
       window.addEventListener('resize', () => {
         chartInstanceRef.current?.resize();
       });
-  
+
       return () => {
         window.removeEventListener('resize', () => {
           chartInstanceRef.current?.resize();
@@ -211,7 +215,7 @@ function App() {
       ]
     });
   };
-    
+
 
   // 时间更新效果
   useEffect(() => {
@@ -226,7 +230,7 @@ function App() {
   useEffect(() => {
     const ws = new WebSocket('ws://localhost:3001')
     wsRef.current = ws
-    
+
     ws.onopen = () => {
       console.log('Connected to WebSocket server')
       setConnected(true)
@@ -248,7 +252,7 @@ function App() {
       try {
         const message = JSON.parse(event.data);
         console.log('Received message:', message);
-        
+
         // 更新当前传感器数据
         setSensorData(prev => {
           const newData = { ...prev };
@@ -259,30 +263,30 @@ function App() {
           }
           return newData;
         });
-    
+
         // 更新图表数据
         setChartData(prev => {
           const timestamp = new Date().getTime();
           let newData = { ...prev };
-          
+
           // 如果是新的时间点，添加到时间数组
           if (newData.times[newData.times.length - 1] !== timestamp) {
             newData.times = [...newData.times, timestamp];
-    
+
             // 对所有数据系列添加新的点，使用最后一个已知值
-            newData.leftWheelFeedback = [...newData.leftWheelFeedback, 
-              newData.leftWheelFeedback[newData.leftWheelFeedback.length - 1] || 0];
+            newData.leftWheelFeedback = [...newData.leftWheelFeedback,
+            newData.leftWheelFeedback[newData.leftWheelFeedback.length - 1] || 0];
             newData.rightWheelFeedback = [...newData.rightWheelFeedback,
-              newData.rightWheelFeedback[newData.rightWheelFeedback.length - 1] || 0];
+            newData.rightWheelFeedback[newData.rightWheelFeedback.length - 1] || 0];
             newData.leftWheelTarget = [...newData.leftWheelTarget,
-              newData.leftWheelTarget[newData.leftWheelTarget.length - 1] || 0];
+            newData.leftWheelTarget[newData.leftWheelTarget.length - 1] || 0];
             newData.rightWheelTarget = [...newData.rightWheelTarget,
-              newData.rightWheelTarget[newData.rightWheelTarget.length - 1] || 0];
+            newData.rightWheelTarget[newData.rightWheelTarget.length - 1] || 0];
           }
-    
+
           // 更新最新的数据点
           const lastIndex = newData.times.length - 1;
-          switch(message.topic) {
+          switch (message.topic) {
             case '/wheel_left/feedback':
               newData.leftWheelFeedback[lastIndex] = message.data;
               break;
@@ -296,7 +300,7 @@ function App() {
               newData.rightWheelTarget[lastIndex] = message.data;
               break;
           }
-    
+
           // 保持数据点数量限制
           if (newData.times.length > MAX_DATA_POINTS) {
             const sliceStart = newData.times.length - MAX_DATA_POINTS;
@@ -308,13 +312,13 @@ function App() {
               rightWheelTarget: newData.rightWheelTarget.slice(sliceStart)
             };
           }
-    
+
           // 更新图表
           updateChart(newData);
-    
+
           return newData;
         });
-    
+
       } catch (err) {
         console.error('Error parsing message:', err);
       }
@@ -360,7 +364,7 @@ function App() {
   const handleVehicleTypeChange = (type) => {
     setVehicleType(type);
     // 可以在这里根据不同类型设置默认参数
-    switch(type) {
+    switch (type) {
       case 'ackermann':
         setVehicleParams({
           wheelRadius: 0.033,
@@ -377,27 +381,48 @@ function App() {
         break;
       // ... 其他类型的默认参数
     }
-    // 发送到后端
-    publishMessage('/vehicle_params', {
-      type: type,
-      ...vehicleParams
-    });
+    setParamsModified(true); // 标记参数已被修改
   };
-  
+
+  // const handleParamChange = (param, value) => {
+  //   const numValue = parseFloat(value);
+  //   setVehicleParams(prev => {
+  //     const newParams = {
+  //       ...prev,
+  //       [param]: numValue
+  //     };
+  //     // 发送到后端
+  //     publishMessage('/vehicle_params', {
+  //       type: vehicleType,
+  //       ...newParams
+  //     });
+  //     return newParams;
+  //   });
+  // };
+
   const handleParamChange = (param, value) => {
     const numValue = parseFloat(value);
-    setVehicleParams(prev => {
-      const newParams = {
-        ...prev,
-        [param]: numValue
-      };
-      // 发送到后端
-      publishMessage('/vehicle_params', {
-        type: vehicleType,
-        ...newParams
-      });
-      return newParams;
+    setVehicleParams(prev => ({
+      ...prev,
+      [param]: numValue
+    }));
+    setParamsModified(true); // 标记参数已被修改
+  };
+
+  // 添加参数提交函数
+  const handleParamsSubmit = () => {
+    // 发送到后端
+    publishMessage('/vehicle_params', {
+      type: vehicleType,
+      ...vehicleParams
     });
+
+    // 显示成功提示
+    setSubmitSuccess(true);
+    setTimeout(() => setSubmitSuccess(false), 2000); // 2秒后隐藏提示
+
+    // 重置修改标记
+    setParamsModified(false);
   };
 
   return (
@@ -437,7 +462,7 @@ function App() {
               </div>
             </div>
           </div>
-          
+
           {/* ECharts 图表容器 */}
           <div ref={chartRef} className="chart-container" />
         </div>
@@ -548,8 +573,7 @@ function App() {
           </div>
         </div>
 
-                {/* 新增参数标定卡片 */}
-                <div className="dashboard-card">
+        <div className="dashboard-card">
           <div className="card-header">
             <h2>参数标定</h2>
           </div>
@@ -641,6 +665,16 @@ function App() {
                   />
                   <span className="unit">m</span>
                 </div>
+              </div>
+              <div className="params-actions">
+                <button
+                  className={`submit-button ${paramsModified ? 'modified' : ''}`}
+                  onClick={handleParamsSubmit}
+                  disabled={!paramsModified}
+                >
+                  应用设置
+                </button>
+                {submitSuccess && <span className="success-message">设置已更新</span>}
               </div>
             </div>
           </div>
