@@ -442,7 +442,17 @@ function App() {
                     type="number"
                     value={wheelSpeed.left}
                     onChange={(e) => handleWheelSpeedChange('left', e.target.value)}
+                    onWheel={(e) => {
+                      e.preventDefault();
+                      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                      const newValue = Math.round((wheelSpeed.left + delta) * 10) / 10;
+                      if (newValue >= -2 && newValue <= 2) {
+                        handleWheelSpeedChange('left', newValue);
+                      }
+                    }}
                     step="0.1"
+                    min="-2"
+                    max="2"
                   />
                   <span className="unit">m/s</span>
                 </div>
@@ -454,7 +464,17 @@ function App() {
                     type="number"
                     value={wheelSpeed.right}
                     onChange={(e) => handleWheelSpeedChange('right', e.target.value)}
+                    onWheel={(e) => {
+                      e.preventDefault();
+                      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                      const newValue = Math.round((wheelSpeed.right + delta) * 10) / 10;
+                      if (newValue >= -2 && newValue <= 2) {
+                        handleWheelSpeedChange('right', newValue);
+                      }
+                    }}
                     step="0.1"
+                    min="-2"
+                    max="2"
                   />
                   <span className="unit">m/s</span>
                 </div>
@@ -471,7 +491,17 @@ function App() {
                     type="number"
                     value={velocity.linear}
                     onChange={(e) => handleVelocityChange('linear', e.target.value)}
+                    onWheel={(e) => {
+                      e.preventDefault();
+                      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                      const newValue = Math.round((velocity.linear + delta) * 10) / 10;
+                      if (newValue >= -1 && newValue <= 1) {
+                        handleVelocityChange('linear', newValue);
+                      }
+                    }}
                     step="0.1"
+                    min="-1"
+                    max="1"
                   />
                   <span className="unit">m/s</span>
                 </div>
@@ -483,7 +513,17 @@ function App() {
                     type="number"
                     value={velocity.angular}
                     onChange={(e) => handleVelocityChange('angular', e.target.value)}
+                    onWheel={(e) => {
+                      e.preventDefault();
+                      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                      const newValue = Math.round((velocity.angular + delta) * 10) / 10;
+                      if (newValue >= -1.57 && newValue <= 1.57) {
+                        handleVelocityChange('angular', newValue);
+                      }
+                    }}
                     step="0.1"
+                    min="-1.57"
+                    max="1.57"
                   />
                   <span className="unit">rad/s</span>
                 </div>

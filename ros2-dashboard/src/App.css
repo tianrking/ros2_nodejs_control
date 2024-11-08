@@ -285,3 +285,51 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #444;
 }
+
+.input-with-unit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #1a1a1a;
+  padding: 5px;
+  border-radius: 6px;
+  border: 1px solid #333;
+}
+
+.input-with-unit input {
+  flex: 1;
+  padding: 8px 12px;
+  background: #333;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.input-with-unit input:focus {
+  outline: none;
+  border-color: #00ff9d;
+  box-shadow: 0 0 0 2px rgba(0, 255, 157, 0.1);
+}
+
+.input-with-unit input:hover {
+  border-color: #555;
+}
+
+/* 去除输入框的上下箭头 */
+.input-with-unit input::-webkit-inner-spin-button {
+  opacity: 0;
+}
+
+/* 鼠标悬停时显示上下箭头 */
+.input-with-unit input:hover::-webkit-inner-spin-button {
+  opacity: 1;
+}
+
+.unit {
+  color: #888;
+  font-size: 0.9rem;
+  padding: 0 8px;
+  border-left: 1px solid #444;
+}
