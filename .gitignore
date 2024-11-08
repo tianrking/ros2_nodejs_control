@@ -22,4 +22,6 @@ node_modules/
 # Ignore your test files if you don't want to track them (optional)
 # test.js
 
+backendpy/
+
 # Ignore any other files or directories that are not part of the project or should not be versioned
