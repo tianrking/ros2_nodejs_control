@@ -26,7 +26,8 @@ async function initROS2() {
     publishers = {
       '/cmd_vel': ros2Node.createPublisher('geometry_msgs/msg/Twist', '/cmd_vel'),
       '/wheel_left/target': ros2Node.createPublisher('std_msgs/msg/Float64', '/wheel_left/target'),
-      '/wheel_right/target': ros2Node.createPublisher('std_msgs/msg/Float64', '/wheel_right/target')
+      '/wheel_right/target': ros2Node.createPublisher('std_msgs/msg/Float64', '/wheel_right/target'),
+      '/vehicle_params': ros2Node.createPublisher('std_msgs/msg/String', '/vehicle_params')  // 使用String消息类型来传递JSON数据
     };
 
     // 创建订阅者
@@ -62,6 +63,20 @@ async function initROS2() {
       }
     );
 
+    // 在创建订阅者的部分添加
+    ros2Node.createSubscription(
+      'std_msgs/msg/String',
+      '/vehicle_params_feedback',  // 假设有一个反馈话题
+      (msg) => {
+        try {
+          const params = JSON.parse(msg.data);
+          broadcastMessage('/vehicle_params_feedback', params);
+        } catch (error) {
+          console.error('Error parsing vehicle params feedback:', error);
+        }
+      }
+    );
+
     ros2Node.spin();
     console.log('Node is spinning');
     return ros2Node;
@@ -89,6 +104,7 @@ wss.on('connection', (ws) => {
   console.log('Client connected');
   
   // 处理来自前端的消息
+  // 处理来自前端的消息
   ws.on('message', (message) => {
     try {
       const data = JSON.parse(message);
@@ -98,17 +114,33 @@ wss.on('connection', (ws) => {
       if (data.type === 'publish') {
         const publisher = publishers[data.topic];
         if (publisher) {
-          // 根据话题类型创建相应的消息
           let msg;
-          if (data.topic === '/cmd_vel') {
-            msg = {
-              linear: { x: data.data.linear, y: 0.0, z: 0.0 },
-              angular: { x: 0.0, y: 0.0, z: data.data.angular }
-            };
-          } else {
-            msg = { data: data.data };
+          // 根据话题类型创建相应的消息
+          switch(data.topic) {
+            case '/cmd_vel':
+              msg = {
+                linear: { x: data.data.linear, y: 0.0, z: 0.0 },
+                angular: { x: 0.0, y: 0.0, z: data.data.angular }
+              };
+              break;
+            case '/vehicle_params':
+              // 将参数对象转换为JSON字符串
+              msg = {
+                data: JSON.stringify({
+                  type: data.data.type,
+                  params: {
+                    wheelRadius: data.data.wheelRadius,
+                    vehicleWidth: data.data.vehicleWidth,
+                    vehicleLength: data.data.vehicleLength
+                  }
+                })
+              };
+              break;
+            default:
+              msg = { data: data.data };
+              break;
           }
-          
+
           // 发布消息
           publisher.publish(msg);
           console.log('Published to', data.topic, ':', msg);
