@@ -9,7 +9,9 @@ import './App.css';
 
 // WebSocket 配置  
 // 需要换成 可以修改的 这样 局域网 设备就可以使用
-const WS_URL = 'ws://192.168.0.187:3001';
+// const WS_URL = 'ws://192.168.0.187:3001';
+const WS_URL = 'ws://127.0.0.1:3001';
+
 
 // 常量配置
 const MAX_DATA_POINTS = 100;

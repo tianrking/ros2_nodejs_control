@@ -1,17 +1,20 @@
 import json
 import threading
+import time
 import websocket_server
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
-from std_msgs.msg import Float64, String
+from std_msgs.msg import Float64, String, Float32
+from sensor_msgs.msg import NavSatFix
 
 # 存储所有连接的客户端
 clients = {}
 
-# ROS2 节点和发布者
+# ROS2 节点和发布者、订阅者
 ros2_node = None
 publishers = {}
+subscribers = {}
 
 def on_message(client, server, message):
     try:
@@ -21,6 +24,8 @@ def on_message(client, server, message):
         # 根据消息类型进行处理
         if data['type'] == 'publish':
             publish_ros2_message(data['topic'], data['data'])
+        elif data['type'] == 'subscribe':
+            subscribe_to_ros2_topic(data['topic'])
     except Exception as e:
         print(f'Error processing message: {e}')
 
@@ -41,7 +46,7 @@ def broadcast_message(topic, data):
         'timestamp': time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime())
     })
     for client in clients.values():
-        if client['connected']:
+        if 'connected' in client and client['connected']:
             client['handler'].send(message)
 
 def publish_ros2_message(topic, data):
@@ -98,8 +103,12 @@ def publish_ros2_message(topic, data):
     else:
         print(f'Publisher not found for topic: {topic}')
 
+def subscribe_to_ros2_topic(topic):
+    # 订阅者已经在 init_ros2 中创建完毕, 不需要再次创建
+    print(f'Subscribed to topic: {topic}')
+
 def init_ros2():
-    global ros2_node, publishers
+    global ros2_node, publishers, subscribers
 
     rclpy.init()
     ros2_node = Node('dashboard_node')
@@ -117,12 +126,69 @@ def init_ros2():
     }
 
     # 创建订阅者
-    # 这里可以添加订阅者来接收 ROS2 消息, 并广播给连接的客户端
-    # 例如:
-    # ros2_node.create_subscription(Float64, '/wheel_left/feedback', lambda msg: broadcast_message('/wheel_left/feedback', msg.data), 10)
+    subscribers = {
+        '/wheel_left/feedback': ros2_node.create_subscription(
+            Float64, '/wheel_left/feedback', lambda msg: on_ros2_message('/wheel_left/feedback', msg.data), 10
+        ),
+        '/wheel_right/feedback': ros2_node.create_subscription(
+            Float64, '/wheel_right/feedback', lambda msg: on_ros2_message('/wheel_right/feedback', msg.data), 10
+        ),
+        '/wheel_left/target_speed': ros2_node.create_subscription(
+            Float64, '/wheel_left/target_speed', lambda msg: on_ros2_message('/wheel_left/target_speed', msg.data), 10
+        ),
+        '/wheel_right/target_speed': ros2_node.create_subscription(
+            Float64, '/wheel_right/target_speed', lambda msg: on_ros2_message('/wheel_right/target_speed', msg.data), 10
+        ),
+        '/vehicle_params_feedback': ros2_node.create_subscription(
+            String, '/vehicle_params_feedback', lambda msg: on_ros2_message('/vehicle_params_feedback', json.loads(msg.data)), 10
+        ),
+        '/gps/fix': ros2_node.create_subscription(
+            NavSatFix, '/gps/fix', lambda msg: on_ros2_message('/gps/fix', {
+                'latitude': msg.latitude,
+                'longitude': msg.longitude,
+                'altitude': msg.altitude
+            }), 10
+        ),
+        '/heading': ros2_node.create_subscription(
+            Float32, '/heading', lambda msg: on_ros2_message('/heading', msg.data), 10
+        ),
+        '/pid_params_feedback': ros2_node.create_subscription(
+            String, '/pid_params_feedback', lambda msg: on_ros2_message('/pid_params_feedback', json.loads(msg.data)), 10
+        ),
+        '/pid_params_left_feedback': ros2_node.create_subscription(
+            String, '/pid_params_left_feedback', lambda msg: on_ros2_message('/pid_params_left_feedback', json.loads(msg.data)), 10
+        ),
+        '/pid_params_right_feedback': ros2_node.create_subscription(
+            String, '/pid_params_right_feedback', lambda msg: on_ros2_message('/pid_params_right_feedback', json.loads(msg.data)), 10
+        )
+    }
 
-    ros2_node.spin_once(timeout_sec=0.0)  # 确保 ROS2 节点已创建
+    print('Subscribers created:')
+    for topic, subscriber in subscribers.items():
+        print(f'- {topic}')
+
+    spin_thread = threading.Thread(target=rclpy.spin, args=(ros2_node,))
+    spin_thread.start()
     print('ROS2 node is spinning')
+
+def on_ros2_message(topic, data):
+    print(f'Received ROS2 message on topic {topic}: {data}')
+    broadcast_message(topic, data)
+
+def broadcast_message(topic, data):
+    message = json.dumps({
+        'topic': topic,
+        'data': data,
+        'timestamp': time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime())
+    })
+    for client_id, client in clients.items():
+        if 'connected' in client and client['connected']:
+            try:
+                client['handler'].send(message)
+            except Exception as e:
+                print(f'Error sending message to client {client_id}: {e}')
+                del clients[client_id]
+                print(f'Client {client_id} disconnected')
 
 def start_server(host='0.0.0.0', port=3001):
     server = websocket_server.WebsocketServer(host, port)
