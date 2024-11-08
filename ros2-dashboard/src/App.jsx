@@ -47,7 +47,10 @@ function App() {
   // 传感器数据状态
   const [sensorData, setSensorData] = useState({
     wheelLeftFeedback: 0,
-    wheelRightFeedback: 0
+    wheelRightFeedback: 0,
+    latitude: null,
+    longitude: null,
+    heading: null
   });
 
   // 图表数据状态
@@ -124,6 +127,20 @@ function App() {
           case '/wheel_right/target_speed':
             newData.rightWheelTarget[lastIndex] = message.data;
             break;
+          case '/gps/fix':
+            setSensorData(prev => ({
+              ...prev,
+              latitude: message.data.latitude,
+              longitude: message.data.longitude
+            }));
+            break;
+          case '/heading':
+            setSensorData(prev => ({
+              ...prev,
+              heading: message.data
+            }));
+            break;
+
           default:
             break;
         }

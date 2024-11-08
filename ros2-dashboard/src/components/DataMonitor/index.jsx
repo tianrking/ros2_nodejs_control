@@ -174,16 +174,52 @@ export const DataMonitor = memo(({ sensorData, chartData }) => {
         <h2>实时数据监控</h2>
       </div>
       <div className="sensor-grid">
-        <div className="sensor-item">
-          <div className="sensor-info">
-            <span className="sensor-label">左轮反馈</span>
-            <span className="sensor-value">{sensorData.wheelLeftFeedback.toFixed(2)} m/s</span>
+        {/* 第一行：轮速和位置信息 */}
+        <div className="sensor-row">
+          <div className="sensor-item">
+            <div className="sensor-info">
+              <span className="sensor-label">左轮反馈</span>
+              <span className="sensor-value">{sensorData.wheelLeftFeedback.toFixed(2)} m/s</span>
+            </div>
           </div>
-        </div>
-        <div className="sensor-item">
-          <div className="sensor-info">
-            <span className="sensor-label">右轮反馈</span>
-            <span className="sensor-value">{sensorData.wheelRightFeedback.toFixed(2)} m/s</span>
+          <div className="sensor-item">
+            <div className="sensor-info">
+              <span className="sensor-label">右轮反馈</span>
+              <span className="sensor-value">{sensorData.wheelRightFeedback.toFixed(2)} m/s</span>
+            </div>
+          </div>
+          <div className="sensor-item coordinates">
+            <div className="sensor-info">
+              <span className="sensor-label">当前位置</span>
+              <div className="coordinate-values">
+                <span className="coordinate-item">
+                  <span className="coordinate-label">纬度:</span>
+                  <span className="coordinate-value">
+                    {sensorData.latitude?.toFixed(6)}°
+                  </span>
+                </span>
+                <span className="coordinate-item">
+                  <span className="coordinate-label">经度:</span>
+                  <span className="coordinate-value">
+                    {sensorData.longitude?.toFixed(6)}°
+                  </span>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="sensor-item heading">
+            <div className="sensor-info">
+              <span className="sensor-label">航向角</span>
+              <div className="heading-value">
+                <span className="sensor-value">
+                  {sensorData.heading?.toFixed(1)}°
+                </span>
+                <div className="heading-indicator" 
+                     style={{ transform: `rotate(${sensorData.heading || 0}deg)` }}>
+                  ↑
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -195,7 +231,10 @@ export const DataMonitor = memo(({ sensorData, chartData }) => {
 DataMonitor.propTypes = {
   sensorData: PropTypes.shape({
     wheelLeftFeedback: PropTypes.number.isRequired,
-    wheelRightFeedback: PropTypes.number.isRequired
+    wheelRightFeedback: PropTypes.number.isRequired,
+    latitude: PropTypes.number,
+    longitude: PropTypes.number,
+    heading: PropTypes.number
   }).isRequired,
   chartData: PropTypes.shape({
     times: PropTypes.array.isRequired,

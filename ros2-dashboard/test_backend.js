@@ -80,6 +80,27 @@ async function initROS2() {
       }
     );
 
+    // 在后端的 initROS2 函数中添加新的订阅者
+    ros2Node.createSubscription(
+      'sensor_msgs/msg/NavSatFix',  // GPS消息类型
+      '/gps/fix',                   // GPS话题
+      (msg) => {
+        broadcastMessage('/gps/fix', {
+          latitude: msg.latitude,
+          longitude: msg.longitude,
+          altitude: msg.altitude
+        });
+      }
+    );
+
+    ros2Node.createSubscription(
+      'std_msgs/msg/Float32',      // 航向角消息类型
+      '/heading',                  // 航向角话题
+      (msg) => {
+        broadcastMessage('/heading', msg.data);
+      }
+    );
+
     // 添加 PID 参数反馈订阅
     ros2Node.createSubscription(
       'std_msgs/msg/String',

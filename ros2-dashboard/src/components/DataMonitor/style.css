@@ -83,3 +83,111 @@
   .sensor-value.updating {
     animation: pulse 0.5s ease-in-out;
   }
+
+  /* 在现有的 DataMonitor/style.css 中添加 */
+
+.sensor-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  width: 100%;
+}
+
+.sensor-item {
+  background: #262626;
+  border: 1px solid #333;
+  padding: 20px;
+  border-radius: 8px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  min-width: 0; /* 防止内容溢出 */
+}
+
+.coordinates .sensor-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.coordinate-values {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.coordinate-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.coordinate-label {
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.coordinate-value {
+  color: #fff;
+  font-size: 1.1rem;
+  font-family: monospace;
+  font-weight: 500;
+}
+
+.heading .sensor-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.heading-value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.heading-indicator {
+  font-size: 1.5rem;
+  transition: transform 0.3s ease;
+  color: #00ff9d;
+  height: 30px;
+  width: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1a1a1a;
+  border-radius: 50%;
+  border: 2px solid #333;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .sensor-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .sensor-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .coordinate-values {
+    flex-direction: row;
+    justify-content: space-around;
+  }
+}
+
+/* 动画减弱模式支持 */
+@media (prefers-reduced-motion: reduce) {
+  .heading-indicator {
+    transition: none;
+  }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  .heading-indicator {
+    border: 2px solid #fff;
+  }
+}
