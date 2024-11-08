@@ -8,75 +8,106 @@ const app = express();
 const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
+// 存储 ROS2 节点和发布者的全局引用
+let ros2Node = null;
+let publishers = {};
+
 // 初始化 ROS2
 async function initROS2() {
   try {
     console.log('Initializing RCLNode...');
-    // 确保 ROS2 环境已经设置
     await rclnodejs.init();
     console.log('RCLNode initialized');
 
-    const node = new rclnodejs.Node('dashboard_node');
+    ros2Node = new rclnodejs.Node('dashboard_node');
     console.log('Node created');
 
+    // 创建发布者
+    publishers = {
+      '/cmd_vel': ros2Node.createPublisher('geometry_msgs/msg/Twist', '/cmd_vel'),
+      '/wheel_left/target': ros2Node.createPublisher('std_msgs/msg/Float64', '/wheel_left/target'),
+      '/wheel_right/target': ros2Node.createPublisher('std_msgs/msg/Float64', '/wheel_right/target')
+    };
+
     // 创建订阅者
-    const subscription = node.createSubscription(
+    ros2Node.createSubscription(
       'std_msgs/msg/Float64',
       '/wheel_left/feedback',
       (msg) => {
-        console.log('Received message:', msg.data);
-        // 广播消息到所有连接的客户端
-        wss.clients.forEach(client => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({
-              topic: '/wheel_left/feedback',
-              data: msg.data,
-              timestamp: new Date().toISOString()
-            }));
-          }
-        });
+        broadcastMessage('/wheel_left/feedback', msg.data);
       }
     );
 
-    // 创建测试发布者
-    const publisher = node.createPublisher('std_msgs/msg/Float64', '/test_topic');
+    ros2Node.createSubscription(
+      'std_msgs/msg/Float64',
+      '/wheel_right/feedback',
+      (msg) => {
+        broadcastMessage('/wheel_right/feedback', msg.data);
+      }
+    );
 
-    // 每秒发布一次测试数据
-    setInterval(() => {
-      const msg = {
-        data: Math.random() * 10
-      };
-      publisher.publish(msg);
-      console.log('Published:', msg.data);
-    }, 1000);
-
-    // 启动节点
-    node.spin();
+    ros2Node.spin();
     console.log('Node is spinning');
-
-    return node;
+    return ros2Node;
   } catch (error) {
     console.error('ROS2 initialization error:', error);
     throw error;
   }
 }
 
+// 广播消息给所有客户端
+function broadcastMessage(topic, data) {
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify({
+        topic: topic,
+        data: data,
+        timestamp: new Date().toISOString()
+      }));
+    }
+  });
+}
+
 // WebSocket 连接处理
 wss.on('connection', (ws) => {
   console.log('Client connected');
   
+  // 处理来自前端的消息
   ws.on('message', (message) => {
-    console.log('Received from client:', message.toString());
+    try {
+      const data = JSON.parse(message);
+      console.log('Received from client:', data);
+
+      // 处理不同类型的消息
+      if (data.type === 'publish') {
+        const publisher = publishers[data.topic];
+        if (publisher) {
+          // 根据话题类型创建相应的消息
+          let msg;
+          if (data.topic === '/cmd_vel') {
+            msg = {
+              linear: { x: data.data.linear, y: 0.0, z: 0.0 },
+              angular: { x: 0.0, y: 0.0, z: data.data.angular }
+            };
+          } else {
+            msg = { data: data.data };
+          }
+          
+          // 发布消息
+          publisher.publish(msg);
+          console.log('Published to', data.topic, ':', msg);
+        } else {
+          console.error('Publisher not found for topic:', data.topic);
+        }
+      }
+    } catch (error) {
+      console.error('Error processing message:', error);
+    }
   });
   
   ws.on('close', () => {
     console.log('Client disconnected');
   });
-});
-
-// HTTP 路由
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
 });
 
 // 启动服务器
@@ -87,13 +118,16 @@ server.listen(PORT, async () => {
     await initROS2();
     console.log('ROS2 initialization completed');
   } catch (error) {
-    console.error('Failed to initialize ROS2:', error.message);
+    console.error('Failed to initialize ROS2:', error);
   }
 });
 
 // 优雅关闭
 process.on('SIGINT', () => {
   console.log('Shutting down...');
+  if (ros2Node) {
+    ros2Node.destroy();
+  }
   server.close(() => {
     process.exit(0);
   });
