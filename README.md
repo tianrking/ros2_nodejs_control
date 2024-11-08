@@ -1,5 +1,9 @@
 # Node.js(v21.0.0) + React(18.3.12) + Vite + RCLNODEJS (ROS2)
 
+![./capture.png](./capture.png)
+
+## RUN 
+
 npm run dev
 
 node test_backend.js
