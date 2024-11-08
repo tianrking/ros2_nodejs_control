@@ -27,7 +27,11 @@ async function initROS2() {
       '/cmd_vel': ros2Node.createPublisher('geometry_msgs/msg/Twist', '/cmd_vel'),
       '/wheel_left/target': ros2Node.createPublisher('std_msgs/msg/Float64', '/wheel_left/target'),
       '/wheel_right/target': ros2Node.createPublisher('std_msgs/msg/Float64', '/wheel_right/target'),
-      '/vehicle_params': ros2Node.createPublisher('std_msgs/msg/String', '/vehicle_params')  // 使用String消息类型来传递JSON数据
+      '/vehicle_params': ros2Node.createPublisher('std_msgs/msg/String', '/vehicle_params'),
+      // 添加 PID 参数发布者
+      '/pid_params': ros2Node.createPublisher('std_msgs/msg/String', '/pid_params'),
+      '/pid_params_left': ros2Node.createPublisher('std_msgs/msg/String', '/pid_params_left'),
+      '/pid_params_right': ros2Node.createPublisher('std_msgs/msg/String', '/pid_params_right')
     };
 
     // 创建订阅者
@@ -63,16 +67,56 @@ async function initROS2() {
       }
     );
 
-    // 在创建订阅者的部分添加
     ros2Node.createSubscription(
       'std_msgs/msg/String',
-      '/vehicle_params_feedback',  // 假设有一个反馈话题
+      '/vehicle_params_feedback',
       (msg) => {
         try {
           const params = JSON.parse(msg.data);
           broadcastMessage('/vehicle_params_feedback', params);
         } catch (error) {
           console.error('Error parsing vehicle params feedback:', error);
+        }
+      }
+    );
+
+    // 添加 PID 参数反馈订阅
+    ros2Node.createSubscription(
+      'std_msgs/msg/String',
+      '/pid_params_feedback',
+      (msg) => {
+        try {
+          const pidParams = JSON.parse(msg.data);
+          broadcastMessage('/pid_params_feedback', pidParams);
+        } catch (error) {
+          console.error('Error parsing PID params feedback:', error);
+        }
+      }
+    );
+
+    // 可以分别订阅左右轮的 PID 参数反馈
+    ros2Node.createSubscription(
+      'std_msgs/msg/String',
+      '/pid_params_left_feedback',
+      (msg) => {
+        try {
+          const pidParams = JSON.parse(msg.data);
+          broadcastMessage('/pid_params_left_feedback', pidParams);
+        } catch (error) {
+          console.error('Error parsing left wheel PID params feedback:', error);
+        }
+      }
+    );
+
+    ros2Node.createSubscription(
+      'std_msgs/msg/String',
+      '/pid_params_right_feedback',
+      (msg) => {
+        try {
+          const pidParams = JSON.parse(msg.data);
+          broadcastMessage('/pid_params_right_feedback', pidParams);
+        } catch (error) {
+          console.error('Error parsing right wheel PID params feedback:', error);
         }
       }
     );
@@ -104,7 +148,6 @@ wss.on('connection', (ws) => {
   console.log('Client connected');
   
   // 处理来自前端的消息
-  // 处理来自前端的消息
   ws.on('message', (message) => {
     try {
       const data = JSON.parse(message);
@@ -124,7 +167,6 @@ wss.on('connection', (ws) => {
               };
               break;
             case '/vehicle_params':
-              // 将参数对象转换为JSON字符串
               msg = {
                 data: JSON.stringify({
                   type: data.data.type,
@@ -133,6 +175,35 @@ wss.on('connection', (ws) => {
                     vehicleWidth: data.data.vehicleWidth,
                     vehicleLength: data.data.vehicleLength
                   }
+                })
+              };
+              break;
+            case '/pid_params':
+              msg = {
+                data: JSON.stringify({
+                  p: data.data.p,
+                  i: data.data.i,
+                  d: data.data.d
+                })
+              };
+              break;
+            case '/pid_params_left':
+              msg = {
+                data: JSON.stringify({
+                  p: data.data.p,
+                  i: data.data.i,
+                  d: data.data.d,
+                  wheel: 'left'
+                })
+              };
+              break;
+            case '/pid_params_right':
+              msg = {
+                data: JSON.stringify({
+                  p: data.data.p,
+                  i: data.data.i,
+                  d: data.data.d,
+                  wheel: 'right'
                 })
               };
               break;

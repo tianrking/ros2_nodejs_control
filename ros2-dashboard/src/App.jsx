@@ -211,6 +211,44 @@ function App() {
     });
   };
 
+  // 在现有的状态定义部分添加 PID 状态
+  const [pidParams, setPidParams] = useState({
+    p: 1.0,
+    i: 0.1,
+    d: 0.01
+  });
+
+  // PID 参数是否被修改的状态
+  const [pidModified, setPidModified] = useState(false);
+  const [pidSubmitSuccess, setPidSubmitSuccess] = useState(false);
+
+  // 在处理函数部分添加
+  const handlePidParamChange = (param, value) => {
+    setPidParams(prev => ({
+      ...prev,
+      [param]: value
+    }));
+    setPidModified(true);
+  };
+
+  const handlePidParamsSubmit = () => {
+    // 发送 PID 参数到后端
+    publishMessage('/pid_params', {
+      p: pidParams.p,
+      i: pidParams.i,
+      d: pidParams.d
+    });
+
+    // 显示成功提示
+    setPidSubmitSuccess(true);
+    setTimeout(() => {
+      setPidSubmitSuccess(false);
+    }, 2000);
+
+    // 重置修改标记
+    setPidModified(false);
+  };
+
   // 车辆类型变更处理函数
   const handleVehicleTypeChange = (type) => {
     setVehicleType(type);
@@ -260,8 +298,11 @@ function App() {
         <MotionControl 
           wheelSpeed={wheelSpeed}
           velocity={velocity}
+          pidParams={pidParams}
           onWheelSpeedChange={handleWheelSpeedChange}
           onVelocityChange={handleVelocityChange}
+          onPidParamChange={handlePidParamChange}
+          onPidParamsSubmit={handlePidParamsSubmit}
         />
 
         <ParamCalibration 

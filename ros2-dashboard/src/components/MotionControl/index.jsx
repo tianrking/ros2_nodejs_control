@@ -3,12 +3,25 @@ import { memo } from 'react';
 import PropTypes from 'prop-types';
 import './style.css';
 
-export const MotionControl = memo(({ wheelSpeed, velocity, onWheelSpeedChange, onVelocityChange }) => {
+export const MotionControl = memo(({ 
+  wheelSpeed, 
+  velocity, 
+  pidParams,
+  onWheelSpeedChange, 
+  onVelocityChange,
+  onPidParamChange,
+  onPidParamsSubmit
+}) => {
   // 速度限制常量
   const LIMITS = {
     wheel: { min: -2, max: 2 },
     linear: { min: -1, max: 1 },
-    angular: { min: -1.57, max: 1.57 }
+    angular: { min: -1.57, max: 1.57 },
+    pid: {
+      p: { min: 0, max: 100, step: 0.1 },
+      i: { min: 0, max: 100, step: 0.1 },
+      d: { min: 0, max: 100, step: 0.01 }
+    }
   };
 
   const handleWheelInput = (wheel, e, isDelta = false) => {
@@ -18,7 +31,7 @@ export const MotionControl = memo(({ wheelSpeed, velocity, onWheelSpeedChange, o
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
       value = Math.round((wheelSpeed[wheel] + delta) * 10) / 10;
     } else {
-      value = parseFloat(e.target.value) || 0;
+      value = e.target.value === '' ? 0 : parseFloat(e.target.value);
     }
 
     if (value >= LIMITS.wheel.min && value <= LIMITS.wheel.max) {
@@ -36,9 +49,24 @@ export const MotionControl = memo(({ wheelSpeed, velocity, onWheelSpeedChange, o
       value = e.target.value === '' ? 0 : parseFloat(e.target.value);
     }
 
-    const limits = LIMITS[type === 'linear' ? 'linear' : 'angular'];
+    const limits = type === 'linear' ? LIMITS.linear : LIMITS.angular;
     if (value >= limits.min && value <= limits.max) {
       onVelocityChange(type, value);
+    }
+  };
+
+  const handlePidInput = (param, e, isDelta = false) => {
+    let value;
+    if (isDelta) {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -LIMITS.pid[param].step : LIMITS.pid[param].step;
+      value = Math.round((pidParams[param] + delta) * 100) / 100;
+    } else {
+      value = parseFloat(e.target.value) || 0;
+    }
+
+    if (value >= LIMITS.pid[param].min && value <= LIMITS.pid[param].max) {
+      onPidParamChange(param, value);
     }
   };
 
@@ -112,7 +140,7 @@ export const MotionControl = memo(({ wheelSpeed, velocity, onWheelSpeedChange, o
             <div className="input-with-unit">
               <input
                 type="number"
-                value={velocity.angular.toFixed(2)}  // 固定显示两位小数
+                value={velocity.angular.toFixed(2)}
                 onChange={(e) => handleVelocityInput('angular', e)}
                 onWheel={(e) => handleVelocityInput('angular', e, true)}
                 step="0.1"
@@ -126,6 +154,69 @@ export const MotionControl = memo(({ wheelSpeed, velocity, onWheelSpeedChange, o
           <div className="speed-limits">
             <span className="limit-label">线速度范围: -1.0 ~ 1.0 m/s</span>
             <span className="limit-label">角速度范围: -1.57 ~ 1.57 rad/s</span>
+          </div>
+        </div>
+
+        {/* PID参数控制 */}
+        <div className="control-section pid-section">
+          <h3>PID 参数设定</h3>
+          <div className="control-input-group">
+            <label>比例系数 (P)</label>
+            <div className="input-with-unit">
+              <input
+                type="number"
+                value={pidParams.p.toFixed(3)}
+                onChange={(e) => handlePidInput('p', e)}
+                onWheel={(e) => handlePidInput('p', e, true)}
+                step={LIMITS.pid.p.step}
+                min={LIMITS.pid.p.min}
+                max={LIMITS.pid.p.max}
+                className="control-input pid-input"
+              />
+            </div>
+          </div>
+          <div className="control-input-group">
+            <label>积分系数 (I)</label>
+            <div className="input-with-unit">
+              <input
+                type="number"
+                value={pidParams.i.toFixed(3)}
+                onChange={(e) => handlePidInput('i', e)}
+                onWheel={(e) => handlePidInput('i', e, true)}
+                step={LIMITS.pid.i.step}
+                min={LIMITS.pid.i.min}
+                max={LIMITS.pid.i.max}
+                className="control-input pid-input"
+              />
+            </div>
+          </div>
+          <div className="control-input-group">
+            <label>微分系数 (D)</label>
+            <div className="input-with-unit">
+              <input
+                type="number"
+                value={pidParams.d.toFixed(3)}
+                onChange={(e) => handlePidInput('d', e)}
+                onWheel={(e) => handlePidInput('d', e, true)}
+                step={LIMITS.pid.d.step}
+                min={LIMITS.pid.d.min}
+                max={LIMITS.pid.d.max}
+                className="control-input pid-input"
+              />
+            </div>
+          </div>
+          <div className="pid-actions">
+            <button 
+              className="pid-submit-button" 
+              onClick={onPidParamsSubmit}
+            >
+              应用 PID 参数
+            </button>
+          </div>
+          <div className="speed-limits">
+            <span className="limit-label">P范围: 0 ~ 100</span>
+            <span className="limit-label">I范围: 0 ~ 100</span>
+            <span className="limit-label">D范围: 0 ~ 100</span>
           </div>
         </div>
       </div>
@@ -142,8 +233,15 @@ MotionControl.propTypes = {
     linear: PropTypes.number.isRequired,
     angular: PropTypes.number.isRequired
   }).isRequired,
+  pidParams: PropTypes.shape({
+    p: PropTypes.number.isRequired,
+    i: PropTypes.number.isRequired,
+    d: PropTypes.number.isRequired
+  }).isRequired,
   onWheelSpeedChange: PropTypes.func.isRequired,
-  onVelocityChange: PropTypes.func.isRequired
+  onVelocityChange: PropTypes.func.isRequired,
+  onPidParamChange: PropTypes.func.isRequired,
+  onPidParamsSubmit: PropTypes.func.isRequired
 };
 
 MotionControl.displayName = 'MotionControl';

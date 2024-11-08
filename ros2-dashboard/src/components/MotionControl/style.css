@@ -147,6 +147,54 @@
   -moz-appearance: number-input;
 }
 
+/* PID 参数控制特殊样式 */
+.pid-section {
+  background: #262626;
+}
+
+.pid-input {
+  font-family: 'Monaco', 'Consolas', monospace;
+  letter-spacing: 0.5px;
+}
+
+.pid-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pid-submit-button {
+  padding: 8px 16px;
+  background: #00ff9d;
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  text-align: center;
+}
+
+.pid-submit-button:hover {
+  background: #00cc7d;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 255, 157, 0.2);
+}
+
+.pid-submit-button:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.pid-submit-button:disabled {
+  background: #333;
+  color: #666;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 /* 验证动画效果 */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
@@ -170,6 +218,14 @@
   
   .control-input {
     font-size: 0.9rem;
+  }
+  
+  .pid-actions {
+    justify-content: stretch;
+  }
+  
+  .pid-submit-button {
+    width: 100%;
   }
   
   .speed-limits {
@@ -203,11 +259,23 @@
 @media (prefers-reduced-motion: reduce) {
   .input-with-unit,
   .control-input,
-  .control-section {
+  .control-section,
+  .pid-submit-button {
     transition: none;
   }
   
   .input-with-unit.invalid {
     animation: none;
+  }
+}
+
+/* 深色主题优化 */
+@media (prefers-color-scheme: dark) {
+  .pid-submit-button {
+    background: #00ff9d;
+  }
+  
+  .pid-submit-button:hover {
+    background: #00cc7d;
   }
 }
