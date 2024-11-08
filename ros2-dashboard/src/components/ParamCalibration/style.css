@@ -1,156 +1,379 @@
 /* components/ParamCalibration/style.css */
+
+/* 折叠部分样式 */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 10px 0;
+  margin-bottom: 20px;
+  user-select: none;
+}
+
+.section-header h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.collapse-button {
+  background: transparent;
+  border: 1px solid #444;
+  color: #888;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.collapse-button:hover {
+  background: #333;
+  color: #fff;
+  border-color: #555;
+}
+
+.collapse-button::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.collapse-button.collapsed::before {
+  transform: rotate(-135deg);
+}
+
+.collapsible-content {
+  overflow: hidden;
+  transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  max-height: 1000px;
+  opacity: 1;
+}
+
+.collapsible-content.collapsed {
+  max-height: 0;
+  opacity: 0;
+  margin: 0;
+  padding: 0;
+}
+
+/* 布局控制 */
+.control-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+/* 控制区块样式 */
+.control-section {
+  background: #262626;
+  border: 1px solid #333;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.control-section:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* 标题样式 */
+.control-section h3 {
+  color: #fff;
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #333;
+}
+
+/* 输入组样式 */
+.control-input-group {
+  margin-bottom: 15px;
+}
+
+.control-input-group:last-child {
+  margin-bottom: 0;
+}
+
+.control-input-group label {
+  display: block;
+  color: #888;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* 车型选择样式 */
 .vehicle-type-select {
-    width: 100%;
+  width: 100%;
+}
+
+.vehicle-select {
+  width: 100%;
+  padding: 12px;
+  background: #333;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.vehicle-select:focus {
+  outline: none;
+  border-color: #00ff9d;
+  box-shadow: 0 0 0 2px rgba(0, 255, 157, 0.1);
+}
+
+.vehicle-select:hover {
+  border-color: #555;
+  background-color: #383838;
+}
+
+/* 输入框容器样式 */
+.input-with-unit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #1a1a1a;
+  padding: 5px;
+  border-radius: 6px;
+  border: 1px solid #333;
+  transition: all 0.2s ease;
+}
+
+.input-with-unit:focus-within {
+  border-color: #00ff9d;
+  box-shadow: 0 0 0 2px rgba(0, 255, 157, 0.1);
+}
+
+/* 参数输入框样式 */
+.param-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: #333;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: monospace;
+  text-align: right;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.param-input:focus {
+  border-color: #00ff9d;
+}
+
+.param-input:hover {
+  border-color: #555;
+}
+
+/* 移除默认验证样式 */
+.param-input:invalid {
+  box-shadow: none;
+  border-color: #444;
+}
+
+.param-input:focus:invalid {
+  border-color: #00ff9d;
+}
+
+/* 数字输入框箭头控制 */
+.param-input::-webkit-inner-spin-button,
+.param-input::-webkit-outer-spin-button {
+  opacity: 0;
+  margin: 0;
+  transition: opacity 0.2s ease;
+}
+
+.param-input:hover::-webkit-inner-spin-button,
+.param-input:hover::-webkit-outer-spin-button {
+  opacity: 1;
+}
+
+/* Firefox 数字输入框样式 */
+.param-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.param-input[type="number"]:hover {
+  -moz-appearance: number-input;
+}
+
+/* 单位标签样式 */
+.unit {
+  color: #888;
+  font-size: 0.9rem;
+  padding: 0 8px;
+  border-left: 1px solid #444;
+  font-family: monospace;
+  user-select: none;
+}
+
+/* 参数范围提示 */
+.param-range {
+  margin-top: 4px;
+  color: #666;
+  font-size: 0.8rem;
+  font-family: monospace;
+  padding-left: 4px;
+}
+
+/* 提交按钮区域 */
+.params-actions {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.submit-button {
+  padding: 8px 16px;
+  background: #333;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  font-size: 0.9rem;
+}
+
+.submit-button.modified {
+  background: #00ff9d;
+  color: #000;
+  opacity: 1;
+  font-weight: 500;
+}
+
+.submit-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.submit-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.submit-button:disabled {
+  cursor: not-allowed;
+}
+
+/* 成功提示样式 */
+.success-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #00ff9d;
+  font-size: 0.9rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.success-icon {
+  font-style: normal;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: #00ff9d;
+  color: #000;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+/* 动画 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
   }
-  
-  .vehicle-select {
-    width: 100%;
-    padding: 12px;
-    background: #333;
-    color: #fff;
-    border: 1px solid #444;
-    border-radius: 6px;
-    font-size: 1rem;
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 8px center;
-    background-size: 16px;
-    transition: all 0.2s ease;
-  }
-  
-  .vehicle-select:focus {
-    outline: none;
-    border-color: #00ff9d;
-    box-shadow: 0 0 0 2px rgba(0, 255, 157, 0.1);
-  }
-  
-  .vehicle-select:hover {
-    border-color: #555;
-    background-color: #383838;
-  }
-  
-  .param-input {
-    flex: 1;
-    padding: 8px 12px;
-    background: #333;
-    color: #fff;
-    border: 1px solid #444;
-    border-radius: 4px;
-    font-size: 1rem;
-    font-family: monospace;
-    text-align: right;
-    transition: all 0.2s ease;
-  }
-  
-  .param-input:focus {
-    outline: none;
-    border-color: #00ff9d;
-  }
-  
-  .param-input:hover {
-    border-color: #555;
-  }
-  
-  .param-range {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 4px;
-    padding: 0 4px;
-    font-size: 0.8rem;
-    color: #666;
-    font-family: monospace;
-  }
-  
-  .range-separator {
-    color: #444;
-  }
-  
-  .params-actions {
-    margin-top: 20px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-  }
-  
-  .submit-button {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    background: #333;
-    color: #fff;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    opacity: 0.6;
-    font-size: 0.9rem;
-    min-width: 120px;
-  }
-  
-  .submit-button.modified {
-    background: #00ff9d;
+  to {
     opacity: 1;
-    color: #000;
-    font-weight: 500;
+    transform: translateY(0);
   }
-  
-  .submit-button:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .control-grid {
+    grid-template-columns: 1fr;
   }
-  
-  .submit-button:disabled {
-    cursor: not-allowed;
+
+  .control-section {
+    padding: 15px;
   }
-  
+
+  .params-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .submit-button {
+    width: 100%;
+  }
+
   .success-message {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #00ff9d;
-    font-size: 0.9rem;
-    animation: fadeIn 0.3s ease;
-  }
-  
-  .success-icon {
-    font-style: normal;
-    display: inline-flex;
-    align-items: center;
     justify-content: center;
-    width: 18px;
-    height: 18px;
-    background: #00ff9d;
-    color: #000;
-    border-radius: 50%;
-    font-size: 0.8rem;
-    font-weight: bold;
   }
-  
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(5px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+}
+
+/* 触摸屏优化 */
+@media (hover: none) {
+  .param-input::-webkit-inner-spin-button {
+    opacity: 1;
   }
-  
-  /* 响应式设计 */
-  @media (max-width: 768px) {
-    .params-actions {
-      flex-direction: column;
-      align-items: stretch;
-    }
-  
-    .submit-button {
-      width: 100%;
-    }
-  
-    .success-message {
-      justify-content: center;
-    }
+
+  .control-section:hover {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  .control-section {
+    border: 2px solid #fff;
+  }
+
+  .param-input {
+    border: 2px solid #fff;
+  }
+}
+
+/* 动画减弱模式支持 */
+@media (prefers-reduced-motion: reduce) {
+  .collapsible-content,
+  .param-input,
+  .submit-button,
+  .control-section {
+    transition: none;
+  }
+
+  .success-message {
+    animation: none;
+  }
+}
