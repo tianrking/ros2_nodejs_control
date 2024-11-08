@@ -34,6 +34,13 @@ function App() {
     angular: 0
   })
 
+  const [vehicleType, setVehicleType] = useState('differential')
+  const [vehicleParams, setVehicleParams] = useState({
+    wheelRadius: 0.033,
+    vehicleWidth: 0.160,
+    vehicleLength: 0.200
+  })
+
   // 初始化图表
   useEffect(() => {
     if (chartRef.current) {
@@ -384,6 +391,49 @@ function App() {
     })
   }
 
+  const handleVehicleTypeChange = (type) => {
+    setVehicleType(type);
+    // 可以在这里根据不同类型设置默认参数
+    switch(type) {
+      case 'ackermann':
+        setVehicleParams({
+          wheelRadius: 0.033,
+          vehicleWidth: 0.160,
+          vehicleLength: 0.200
+        });
+        break;
+      case 'differential':
+        setVehicleParams({
+          wheelRadius: 0.033,
+          vehicleWidth: 0.160,
+          vehicleLength: 0.200
+        });
+        break;
+      // ... 其他类型的默认参数
+    }
+    // 发送到后端
+    publishMessage('/vehicle_params', {
+      type: type,
+      ...vehicleParams
+    });
+  };
+  
+  const handleParamChange = (param, value) => {
+    const numValue = parseFloat(value);
+    setVehicleParams(prev => {
+      const newParams = {
+        ...prev,
+        [param]: numValue
+      };
+      // 发送到后端
+      publishMessage('/vehicle_params', {
+        type: vehicleType,
+        ...newParams
+      });
+      return newParams;
+    });
+  };
+
   return (
     <div className="dashboard">
       {/* 顶部状态栏 */}
@@ -531,7 +581,108 @@ function App() {
             </div>
           </div>
         </div>
+
+                {/* 新增参数标定卡片 */}
+                <div className="dashboard-card">
+          <div className="card-header">
+            <h2>参数标定</h2>
+          </div>
+          <div className="control-grid">
+            {/* 载具架构选择 */}
+            <div className="control-section">
+              <h3>载具架构</h3>
+              <div className="control-input-group">
+                <div className="vehicle-type-select">
+                  <select
+                    value={vehicleType}
+                    onChange={(e) => handleVehicleTypeChange(e.target.value)}
+                    className="vehicle-select"
+                  >
+                    <option value="ackermann">阿克曼小车 (2WD1S)</option>
+                    <option value="differential">两轮差速小车-履带车 (2WD)</option>
+                    <option value="mecanum">四轮全向车 (4WD)</option>
+                    <option value="boat">差速船 (DEV)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* 车辆参数 */}
+            <div className="control-section">
+              <h3>车辆参数</h3>
+              <div className="control-input-group">
+                <label>轮子半径 (m)</label>
+                <div className="input-with-unit">
+                  <input
+                    type="number"
+                    value={vehicleParams.wheelRadius}
+                    onChange={(e) => handleParamChange('wheelRadius', e.target.value)}
+                    onWheel={(e) => {
+                      e.preventDefault();
+                      const delta = e.deltaY > 0 ? -0.001 : 0.001;
+                      const newValue = Math.round((vehicleParams.wheelRadius + delta) * 1000) / 1000;
+                      if (newValue >= 0.01 && newValue <= 0.5) {
+                        handleParamChange('wheelRadius', newValue);
+                      }
+                    }}
+                    step="0.001"
+                    min="0.01"
+                    max="0.5"
+                  />
+                  <span className="unit">m</span>
+                </div>
+              </div>
+              <div className="control-input-group">
+                <label>车身宽度 (m)</label>
+                <div className="input-with-unit">
+                  <input
+                    type="number"
+                    value={vehicleParams.vehicleWidth}
+                    onChange={(e) => handleParamChange('vehicleWidth', e.target.value)}
+                    onWheel={(e) => {
+                      e.preventDefault();
+                      const delta = e.deltaY > 0 ? -0.01 : 0.01;
+                      const newValue = Math.round((vehicleParams.vehicleWidth + delta) * 100) / 100;
+                      if (newValue >= 0.1 && newValue <= 2) {
+                        handleParamChange('vehicleWidth', newValue);
+                      }
+                    }}
+                    step="0.01"
+                    min="0.1"
+                    max="2"
+                  />
+                  <span className="unit">m</span>
+                </div>
+              </div>
+              <div className="control-input-group">
+                <label>车身长度 (m)</label>
+                <div className="input-with-unit">
+                  <input
+                    type="number"
+                    value={vehicleParams.vehicleLength}
+                    onChange={(e) => handleParamChange('vehicleLength', e.target.value)}
+                    onWheel={(e) => {
+                      e.preventDefault();
+                      const delta = e.deltaY > 0 ? -0.01 : 0.01;
+                      const newValue = Math.round((vehicleParams.vehicleLength + delta) * 100) / 100;
+                      if (newValue >= 0.1 && newValue <= 2) {
+                        handleParamChange('vehicleLength', newValue);
+                      }
+                    }}
+                    step="0.01"
+                    min="0.1"
+                    max="2"
+                  />
+                  <span className="unit">m</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+
+
+
 
       {/* 错误提示 */}
       {error && (

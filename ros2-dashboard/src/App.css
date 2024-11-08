@@ -333,3 +333,51 @@
   padding: 0 8px;
   border-left: 1px solid #444;
 }
+
+
+
+.vehicle-type-select {
+  width: 100%;
+}
+
+.vehicle-select {
+  width: 100%;
+  padding: 8px 12px;
+  background: #333;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+}
+
+.vehicle-select:focus {
+  outline: none;
+  border-color: #00ff9d;
+  box-shadow: 0 0 0 2px rgba(0, 255, 157, 0.1);
+}
+
+.vehicle-select:hover {
+  border-color: #555;
+}
+
+/* 使参数输入框更紧凑 */
+.control-input-group {
+  margin-bottom: 12px;
+}
+
+.control-input-group label {
+  font-size: 0.85rem;
+}
+
+/* 让数值输入更精确 */
+.input-with-unit input {
+  font-family: monospace;
+  text-align: right;
+}
