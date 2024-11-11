@@ -39,15 +39,6 @@ def on_client_disconnect(client, server):
     del clients[client_id]
     print(f'Client disconnected: {client_id}')
 
-def broadcast_message(topic, data):
-    message = json.dumps({
-        'topic': topic,
-        'data': data,
-        'timestamp': time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime())
-    })
-    for client in clients.values():
-        if 'connected' in client and client['connected']:
-            client['handler'].send(message)
 
 def publish_ros2_message(topic, data):
     publisher = publishers.get(topic)
@@ -181,14 +172,20 @@ def broadcast_message(topic, data):
         'data': data,
         'timestamp': time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime())
     })
+    print(f"Broadcasting message: {message}")
+    
+    disconnected_clients = []
     for client_id, client in clients.items():
-        if 'connected' in client and client['connected']:
-            try:
-                client['handler'].send(message)
-            except Exception as e:
-                print(f'Error sending message to client {client_id}: {e}')
-                del clients[client_id]
-                print(f'Client {client_id} disconnected')
+        try:
+            if 'handler' in client:
+                client['handler'].send_message(message)
+        except Exception as e:
+            print(f'Error sending message to client {client_id}: {e}')
+            disconnected_clients.append(client_id)
+    
+    # 清理断开连接的客户端
+    for client_id in disconnected_clients:
+        del clients[client_id]
 
 def start_server(host='0.0.0.0', port=3001):
     server = websocket_server.WebsocketServer(host, port)
