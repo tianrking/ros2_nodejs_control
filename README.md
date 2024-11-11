@@ -6,7 +6,11 @@
 
 npm run dev
 
+## Backend Node.js os Python
+
 node test_backend.js
+
+python test_backend.py
 
 ## ROS2 测试命令
 

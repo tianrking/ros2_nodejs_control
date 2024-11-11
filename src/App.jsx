@@ -10,7 +10,7 @@ import './App.css';
 // WebSocket 配置  
 // 需要换成 可以修改的 这样 局域网 设备就可以使用
 // const WS_URL = 'ws://192.168.0.187:3001';
-const WS_URL = 'ws://127.0.0.1:3001';
+const DEFAULT_WS_URL = 'ws://127.0.0.1:3001';
 
 
 // 常量配置
@@ -161,9 +161,16 @@ function App() {
     } catch (err) {
       console.error('Error processing message:', err);
     }
-  };// WebSocket 连接效果
-  useEffect(() => {
-    wsRef.current = new WebSocketClient(WS_URL, {
+  };
+
+  // WebSocket 连接函数
+  const connectWebSocket = (url) => {
+    // 如果已存在连接，先关闭
+    if (wsRef.current) {
+      wsRef.current.close();
+    }
+
+    wsRef.current = new WebSocketClient(url, {
       onOpen: () => {
         console.log('WebSocket connected');
         setConnected(true);
@@ -176,17 +183,22 @@ function App() {
       },
       onError: (error) => {
         console.error('WebSocket error:', error);
+        setConnected(false);
         setError('WebSocket connection error');
       },
       onMessage: handleWebSocketMessage
     });
 
     wsRef.current.connect();
+  };
 
-    return () => {
-      wsRef.current?.close();
-    };
-  }, []);
+  // WebSocket 断开连接函数
+  const disconnectWebSocket = () => {
+    if (wsRef.current) {
+      wsRef.current.close();
+      setConnected(false);
+    }
+  };
 
   // 系统时间更新效果
   useEffect(() => {
@@ -305,8 +317,12 @@ function App() {
   return (
     <div className="dashboard">
       <StatusBar 
-        connected={connected} 
-        currentTime={currentTime} 
+  connected={connected} 
+  currentTime={currentTime}
+  defaultWsUrl={DEFAULT_WS_URL}
+  onConnect={connectWebSocket}
+  onDisconnect={disconnectWebSocket}
+        
       />
       
       <div className="main-content">
