@@ -14,9 +14,9 @@ export const MotionControl = memo(({
 }) => {
   // 速度限制常量
   const LIMITS = {
-    wheel: { min: -2, max: 2 },
-    linear: { min: -1, max: 1 },
-    angular: { min: -1.57, max: 1.57 },
+    wheel: { min: -1000, max: 1000 },
+    linear: { min: -20, max: 20 },
+    angular: { min: -180, max: 180 },
     pid: {
       p: { min: 0, max: 100, step: 0.1 },
       i: { min: 0, max: 100, step: 0.1 },
